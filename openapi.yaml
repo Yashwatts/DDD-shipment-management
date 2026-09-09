@@ -1,0 +1,241 @@
+openapi: 3.0.0
+info:
+  title: Shipment API
+  description: API for managing shipments and tracking information.
+  version: 1.0.0
+paths:
+  /shipments:
+    post:
+      tags:
+        - Create Shipment
+      summary: Create a new shipment
+      description: Initialize a shipment containing at least one stop.
+      operationId: createShipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShipmentRequest'
+      responses:
+        '201':
+          description: Shipment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '400':
+          description: Business Rule Violation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /shipments/{shipmentId}:
+    get:
+      tags:
+        - Get Shipment
+      summary: Get shipment details
+      description: Retrieve the details of a specific shipment, including its stops and their statuses.
+      operationId: getShipmentById
+      parameters:
+        - name: shipmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Shipment details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShipmentResponse'
+        '404':
+          description: Shipment not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /shipments/{shipmentId}/stops/{stopId}/arrive:
+    post:
+      tags:
+        - Update Stop Status
+      summary: Arrive at a specific stop
+      description: Marks a stop status as Arrived.
+      operationId: arriveAtStop
+      parameters:
+        - name: shipmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: stopId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stop status updated to Arrived successfully
+        '400':
+          description: Business Rule Violation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Shipment or Stop not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /shipments/{shipmentId}/stops/{stopId}/pickup:
+    post:
+      tags:
+        - Update Stop Status
+      summary: Pickup at a specific stop
+      description: Completes a pickup operation.
+      operationId: pickupAtStop
+      parameters:
+        - name: shipmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: stopId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stop status updated to Picked Up successfully
+        '400':
+          description: Business Rule Violation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Shipment or Stop not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /shipments/{shipmentId}/stops/{stopId}/deliver:
+    post:
+      tags:
+        - Update Stop Status
+      summary: Deliver at a specific stop
+      description: Completes a delivery operation.
+      operationId: deliverAtStop
+      parameters:
+        - name: shipmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: stopId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stop status updated to Delivered successfully
+        '400':
+          description: Business Rule Violation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Shipment or Stop not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CreateShipmentRequest:
+      type: object
+      required:
+        - stops
+      properties:
+        stops:
+          type: array
+          minItems: 1
+          description: List of stops for the shipment.
+          items:
+            $ref: '#/components/schemas/CreateStopInput'
+
+    CreateStopInput:
+      type: object
+      required:
+        - type
+        - address
+      properties:
+        type:
+          type: string
+          enum: [Pickup, Delivery]
+          example: 'Pickup'
+        address:
+          type: string
+          example: 'Zenmonk, Mohali, Punjab, India'
+
+    ShipmentResponse:
+      type: object
+      properties:
+        shipmentId:
+          type: string
+          format: uuid
+          example: '11a2b3c4-5678-90ab-cdef-123456789abc'
+        staus:
+          type: string
+          enum: [Active, Completed]
+          example: 'Created'
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/StopResponse'
+
+    StopResponse:
+      type: object
+      properties:
+        stopId:
+          type: string
+          format: uuid
+          example: '22b3c4d5-6789-01bc-def0-234567890def'
+        sequence:
+          type: integer
+          example: 1
+        type:
+          type: string
+          enum: [Pickup, Delivery]
+          example: 'Pickup'
+        status:
+          type: string
+          enum: [In Transit, Arrived, Departed]
+          example: 'In Transit'
+
+    ErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          example: 'RULE_VIOLATION'
+        message:
+          type: string
+          example: 'Cannot perform action. Prior stops have not departed.'

@@ -1,0 +1,191 @@
+asyncapi: 3.0.0
+info:
+  title: Shipment Events API
+  description: API for managing shipment events.
+  version: 1.0.0
+
+servers:
+  development:
+    host: localhost:5672
+    description: Development AMQP broker.
+    protocol: amqp
+    protocolVersion: 0-1
+    title: Development Server
+    summary: Local development environment for testing shipment events.
+    tags:
+      - name: development
+        description: Development environment for shipment events.
+    bindings:
+      amqp:
+        exchange: dev-exchange
+        queue: dev-queue
+
+  staging:
+    host: rabbitmq-staging.in.mycompany.com:5672
+    description: RabbitMQ broker for the staging environment.
+    protocol: amqp
+    protocolVersion: 0-1
+    title: Staging Server
+    summary: Staging environment server
+    security:
+      - type: apiKey
+        in: user
+        description: Provide your API key as the user and leave the password empty
+    tags:
+      - name: staging
+        description: Staging environment
+    bindings:
+      amqp:
+        exchange: staging-exchange
+        queue: staging-queue
+
+  production:
+    host: rabbitmq.in.mycompany.com:5672
+    description: RabbitMQ broker for the production environment.
+    protocol: amqp
+    protocolVersion: 0-1
+    title: Production Server
+    summary: Production environment server
+    security:
+      - type: http
+        scheme: bearer
+    tags:
+      - name: production
+        description: Production environment
+    bindings:
+      amqp:
+        exchange: my-exchange
+        queue: my-queue
+
+channels:
+  shipmentEvents:
+    address: shipment.events
+    title: Shipment Events Channel
+    description: Channel for shipment events, including creation, updates, and status changes.
+    messages:
+      shipmentCreated:
+        $ref: '#/components/messages/ShipmentCreatedMessage'
+      stopArrived:
+        $ref: '#/components/messages/StopArrivedMessage'
+      stopCompleted:
+        $ref: '#/components/messages/StopCompletedMessage'
+      shipmentCompleted:
+        $ref: '#/components/messages/ShipmentCompletedMessage'
+
+operations:
+  publishShipmentEvents:
+    action: send
+    channel:
+      $ref: '#/channels/shipmentEvents'
+    summary: Publish shipment events to the shipmentEvents channel.
+    messages:
+      - $ref: '#/channels/shipmentEvents/messages/shipmentCreated'
+      - $ref: '#/channels/shipmentEvents/messages/stopArrived'
+      - $ref: '#/channels/shipmentEvents/messages/stopCompleted'
+      - $ref: '#/channels/shipmentEvents/messages/shipmentCompleted'
+
+components:
+  messages:
+    ShipmentCreatedMessage:
+      name: ShipmentCreated
+      title: Shipment Created Event
+      summary: Event triggered when a new shipment is created.
+      payload:
+        type: object
+        required: [eventId, occurredAt, shipmentId, stops]
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          occurredAt:
+            type: string
+            format: date-time
+          shipmentId:
+            type: string
+            format: uuid
+          stops:
+            type: array
+            items:
+              $ref: '#/components/schemas/EventStopPayload'
+
+    StopArrivedMessage:
+      name: StopArrived
+      title: Stop Arrived Event
+      summary: Event triggered when a stop is marked as arrived.
+      payload:
+        type: object
+        required: [eventId, occurredAt, shipmentId, stopId]
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          occurredAt:
+            type: string
+            format: date-time
+          shipmentId:
+            type: string
+            format: uuid
+          stopId:
+            type: string
+            format: uuid
+
+    StopCompletedMessage:
+      name: StopCompleted
+      title: Stop Completed Event
+      summary: Event triggered when a stop is marked as completed.
+      payload:
+        type: object
+        required: [eventId, occurredAt, shipmentId, stopId, acionType]
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          occurredAt:
+            type: string
+            format: date-time
+          shipmentId:
+            type: string
+            format: uuid
+          stopId:
+            type: string
+            format: uuid
+          actionType:
+            type: string
+            enum: [Pickup, Delivery]
+            description: Type of action performed at the stop.
+
+    ShipmentCompletedMessage:
+      name: ShipmentCompleted
+      title: Shipment Completed Event
+      summary: Event triggered when a shipment is marked as completed.
+      payload:
+        type: object
+        required: [eventId, occurredAt, shipmentId]
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          occurredAt:
+            type: string
+            format: date-time
+          shipmentId:
+            type: string
+            format: uuid
+
+  schemas:
+    EventStopPayload:
+      type: object
+      properties:
+        stopId:
+          type: string
+          format: uuid
+        sequence:
+          type: integer
+        type:
+          type: string
+          enum: [Pickup, Delivery]
+        status:
+          type: string
+          enum: [InTransit, Arrived, Departed]
+        address:
+          type: string
