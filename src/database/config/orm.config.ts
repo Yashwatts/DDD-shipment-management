@@ -29,6 +29,8 @@ const migrations = [
 
 const entities = [
   __dirname + `/../../modules/${moduleName}/domains/shipment/*.entity.{ts,js}`,
+  __dirname +
+    `/../../modules/${moduleName}/domains/shipment/stop/*.entity.{ts,js}`,
 ];
 
 export const typeOrmConfig: DataSourceOptions = {

@@ -184,13 +184,22 @@ components:
     CreateStopInput:
       type: object
       required:
+        - stopId
         - type
+        - sequence
         - address
       properties:
+        stopId:
+          type: string
+          format: uuid
+          example: '22b3c4d5-6789-01bc-def0-234567890def'
         type:
           type: string
           enum: [Pickup, Delivery]
           example: 'Pickup'
+        sequence:
+          type: integer
+          example: 1
         address:
           type: string
           example: 'Zenmonk, Mohali, Punjab, India'
@@ -233,9 +242,6 @@ components:
     ErrorResponse:
       type: object
       properties:
-        errorCode:
-          type: string
-          example: 'RULE_VIOLATION'
         message:
           type: string
           example: 'Cannot perform action. Prior stops have not departed.'

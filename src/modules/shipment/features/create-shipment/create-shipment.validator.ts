@@ -1,23 +1,26 @@
 import {
-  ArrayMinSize,
   IsArray,
   IsEnum,
   IsNotEmpty,
   IsNumber,
   IsString,
-  ValidateNested,
+  IsUUID,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { StopType } from '../../domains/enums/stop-type.enum';
 
 export class CreateStopValidator {
-  @IsNumber()
-  stopId: number;
-  @IsEnum(['Pickup', 'Delivery'], {
+  @IsUUID()
+  @IsNotEmpty({ message: 'Stop ID is required' })
+  stopId: string;
+
+  @IsEnum(StopType, {
     message: 'Type must be either Pickup or Delivery',
   })
-  type: 'Pickup' | 'Delivery';
+  type: StopType;
+
   @IsNumber()
   sequence: number;
+
   @IsString()
   @IsNotEmpty({ message: 'Address is required' })
   address: string;
@@ -25,8 +28,5 @@ export class CreateStopValidator {
 
 export class CreateShipmentValidator {
   @IsArray()
-  @ArrayMinSize(1, { message: 'A shipment must contain at least one stop.' })
-  @ValidateNested({ each: true })
-  @Type(() => CreateStopValidator)
   stops: CreateStopValidator[];
 }
