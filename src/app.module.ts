@@ -13,7 +13,7 @@ import { ShipmentModule } from './modules/shipment/shipment.module';
       ...typeOrmConfig,
       autoLoadEntities: true,
     }),
-    ShipmentModule
+    ShipmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

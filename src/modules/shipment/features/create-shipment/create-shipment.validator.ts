@@ -6,7 +6,7 @@ import {
   IsString,
   IsUUID,
 } from 'class-validator';
-import { StopType } from '../../domains/enums/stop-type.enum';
+import { StopType } from '../../domains/shipment/stop/enums/stop-type.enum';
 
 export class CreateStopValidator {
   @IsUUID()

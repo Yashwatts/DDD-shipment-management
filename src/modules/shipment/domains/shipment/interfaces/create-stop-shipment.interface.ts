@@ -1,4 +1,4 @@
-import { StopType } from '../enums/stop-type.enum';
+import { StopType } from '../stop/enums/stop-type.enum';
 
 export interface CreateStopShipmentParams {
   stopId: string;

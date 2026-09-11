@@ -1,19 +1,19 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { StopArrivedCommand } from './stop-arrived.command';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ShipmentEntity } from '../../domains/shipment/shipment.entity';
 import { Repository } from 'typeorm';
 import { ShipmentNotFoundException } from '../../domains/shipment/exceptions/shipment-not-found.exception';
-import { StopArrivedEvent } from '../../domains/shipment/events/stop-arrived.event';
+import { StopPickupCommand } from './stop-pickup.command';
+import { StopCompletedEvent } from '../../domains/shipment/events/stop-completed.event';
 
-@CommandHandler(StopArrivedCommand)
-export class StopArrivedHandler implements ICommandHandler<StopArrivedCommand> {
+@CommandHandler(StopPickupCommand)
+export class StopPickupHandler implements ICommandHandler<StopPickupCommand> {
   constructor(
     @InjectRepository(ShipmentEntity)
     private readonly shipmentRepository: Repository<ShipmentEntity>,
   ) {}
 
-  async execute(command: StopArrivedCommand): Promise<{ message: string }> {
+  async execute(command: StopPickupCommand): Promise<{ message: string }> {
     const shipment = await this.shipmentRepository.findOne({
       where: { id: command.shipmentId },
       relations: ['stops'],
@@ -22,12 +22,12 @@ export class StopArrivedHandler implements ICommandHandler<StopArrivedCommand> {
     if (!shipment) {
       throw new ShipmentNotFoundException(command.shipmentId);
     }
-    shipment.arriveAtStop(command.stopId);
+    shipment.pickupAtStop(command.stopId);
     await this.shipmentRepository.save(shipment);
 
-    const event = new StopArrivedEvent(shipment.id, command.stopId);
-    console.log('Stop Arrived Event:', event);
+    const event = new StopCompletedEvent(shipment.id, command.stopId, 'Pickup');
+    console.log('Stop Completed Event:', event);
     
-    return { message: 'Arrived at stop successfully' };
+    return { message: 'Picked up at stop successfully' };
   }
 }

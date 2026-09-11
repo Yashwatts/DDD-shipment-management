@@ -7,13 +7,14 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { StopEntity } from './stop/stop.entity';
-import { ShipmentStatus } from '../enums/shipment-status.enum';
-import { StopType } from '../enums/stop-type.enum';
+import { ShipmentStatus } from './enums/shipment-status.enum';
+import { StopType } from './stop/enums/stop-type.enum';
 import { v4 as uuidv4 } from 'uuid';
-import { CreateStopShipmentParams } from '../interfaces/create-stop-shipment.interface';
-import { ShipmentCreatedEvent } from '../events/shipment-created.event';
-import { EmptyStopsException } from '../exceptions/empty-stops.exception';
-import { DuplicateStopIdException } from '../exceptions/duplicate-stop-id.exception';
+import { CreateStopShipmentParams } from './interfaces/create-stop-shipment.interface';
+import { EmptyStopsException } from './exceptions/empty-stops.exception';
+import { DuplicateStopIdException } from './exceptions/duplicate-stop-id.exception';
+import { StopNotFoundException } from './exceptions/stop-not-found.exception';
+import { PriorStopsNotDepartedException } from './exceptions/prior-stops-not-departed.exception';
 
 @Entity({
   name: 'shipments',
@@ -46,45 +47,48 @@ export class ShipmentEntity {
     if (!stops || stops.length === 0) {
       throw new EmptyStopsException();
     }
-    const seenStopIds = new Set<string>();
-    for (const stop of stops) {
-      if (seenStopIds.has(stop.stopId)) {
-        throw new DuplicateStopIdException(stop.stopId);
-      }
-      seenStopIds.add(stop.stopId);
-    }
     const shipment = new ShipmentEntity();
     shipment.id = uuidv4();
     shipment.status = ShipmentStatus.ACTIVE;
-    shipment.stops = stops.map((stop) => {
-      return StopEntity.create({
-        stopId: stop.stopId,
-        shipmentId: shipment.id,
-        sequence: stop.sequence,
-        type: stop.type === 'Pickup' ? StopType.PICKUP : StopType.DELIVERY,
-        address: stop.address,
-      });
-    });
-
-    const event = new ShipmentCreatedEvent(
-      shipment.id,
-      shipment.stops.map((stop) => ({
-        stopId: stop.id,
-        sequence: stop.sequence,
-        type: stop.type,
-        status: stop.status,
-        address: stop.address,
-      })),
-    );
-    console.log('Shipment Created Event:', event);
+    shipment.stops = [];
+    for (const stop of stops) {
+      shipment.createStop(stop);
+    }
 
     return shipment;
+  }
+
+  createStop(params: CreateStopShipmentParams): StopEntity {
+    const stopAlreadyExists = this.stops.some(
+      (stop) => stop.id === params.stopId,
+    );
+    if (stopAlreadyExists) {
+      throw new DuplicateStopIdException(params.stopId);
+    }
+
+    const newStop = StopEntity.create({
+      stopId: params.stopId,
+      shipmentId: this.id,
+      sequence: params.sequence,
+      type: params.type === 'Pickup' ? StopType.PICKUP : StopType.DELIVERY,
+      address: params.address,
+    });
+    
+    this.stops.push(newStop);
+    return newStop;
   }
 
   arriveAtStop(stopId: string): void {
     const targetStop = this.stops.find((stop) => stop.id === stopId);
     if (!targetStop) {
-      throw new Error(`Stop with ID ${stopId} not found in this shipment.`);
+      throw new StopNotFoundException(stopId);
+
+    }
+    const priorIncompleteStops = this.stops.filter(
+      (stop) => stop.sequence < targetStop.sequence && !stop.isDeparted(),
+    );
+    if (priorIncompleteStops.length > 0) {
+      throw new PriorStopsNotDepartedException();
     }
     targetStop.arrive();
   }
@@ -92,16 +96,25 @@ export class ShipmentEntity {
   pickupAtStop(stopId: string): void {
     const targetStop = this.stops.find((stop) => stop.id === stopId);
     if (!targetStop) {
-      throw new Error(`Stop with ID ${stopId} not found in this shipment.`);
+      throw new StopNotFoundException(stopId);
     }
     targetStop.pickup();
+    this.checkAndMarkCompleted();
   }
 
   deliverAtStop(stopId: string): void {
     const targetStop = this.stops.find((stop) => stop.id === stopId);
     if (!targetStop) {
-      throw new Error(`Stop with ID ${stopId} not found in this shipment.`);
+      throw new StopNotFoundException(stopId);
     }
     targetStop.deliver();
+    this.checkAndMarkCompleted();
+  }
+
+  private checkAndMarkCompleted(): void {
+    const allStopsDeparted = this.stops.every((stop) => stop.isDeparted());
+    if (allStopsDeparted && this.status !== ShipmentStatus.COMPLETED) {
+      this.status = ShipmentStatus.COMPLETED;
+    }
   }
 }
