@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-export class StopArrivedEvent {
+export class ArriveAtStopEvent {
   readonly eventId: string;
   readonly occurredAt: string;
 

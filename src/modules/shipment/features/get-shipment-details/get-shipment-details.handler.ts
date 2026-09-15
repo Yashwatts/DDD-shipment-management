@@ -1,13 +1,13 @@
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { GetShipmentDetailsQuery } from './shipment-details.query';
+import { GetShipmentDetailsQuery } from './get-shipment-details.query';
 import { ShipmentEntity } from '../../domains/shipment/shipment.entity';
-import { ShipmentResponseValidator } from './shipment-details.validator';
+import { ShipmentResponseValidator } from './get-shipment-details.validator';
 import { ShipmentNotFoundException } from '../../domains/shipment/exceptions/shipment-not-found.exception';
 
 @QueryHandler(GetShipmentDetailsQuery)
-export class ShipmentDetailsHandler implements IQueryHandler<GetShipmentDetailsQuery> {
+export class GetShipmentDetailsHandler implements IQueryHandler<GetShipmentDetailsQuery> {
   constructor(
     @InjectRepository(ShipmentEntity)
     private readonly shipmentRepository: Repository<ShipmentEntity>,

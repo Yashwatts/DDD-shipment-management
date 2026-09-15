@@ -1,6 +1,6 @@
 import { Command } from '@nestjs/cqrs';
 
-export class StopArrivedCommand extends Command<{ message: string }> {
+export class ArriveAtStopCommand extends Command<{ message: string }> {
   constructor(
     public readonly shipmentId: string,
     public readonly stopId: string,

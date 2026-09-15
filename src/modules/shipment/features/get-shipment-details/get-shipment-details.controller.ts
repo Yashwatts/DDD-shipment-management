@@ -1,10 +1,10 @@
 import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
-import { GetShipmentDetailsQuery } from './shipment-details.query';
-import { ShipmentResponseValidator } from './shipment-details.validator';
+import { GetShipmentDetailsQuery } from './get-shipment-details.query';
+import { ShipmentResponseValidator } from './get-shipment-details.validator';
 
 @Controller('shipments/:shipmentId')
-export class ShipmentDetailsController {
+export class GetShipmentDetailsController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get()

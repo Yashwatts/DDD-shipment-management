@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ShipmentEntity } from '../../domains/shipment/shipment.entity';
+import { GetShipmentDetailsController } from './get-shipment-details.controller';
+import { GetShipmentDetailsHandler } from './get-shipment-details.handler';
 import { StopEntity } from '../../domains/shipment/stop/stop.entity';
-import { StopDeliveredController } from './stop-delivered.controller';
-import { StopDeliveredHandler } from './stop-delivered.handler';
 
 @Module({
   imports: [CqrsModule, TypeOrmModule.forFeature([ShipmentEntity, StopEntity])],
-  controllers: [StopDeliveredController],
-  providers: [StopDeliveredHandler],
+  controllers: [GetShipmentDetailsController],
+  providers: [GetShipmentDetailsHandler],
 })
-export class StopDeliveredFeatureModule {}
+export class GetShipmentDetailsFeatureModule {}

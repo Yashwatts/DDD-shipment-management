@@ -1,19 +1,19 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { ArriveAtStopCommand } from './arrive-at-stop.command';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ShipmentEntity } from '../../domains/shipment/shipment.entity';
 import { Repository } from 'typeorm';
 import { ShipmentNotFoundException } from '../../domains/shipment/exceptions/shipment-not-found.exception';
-import { StopDeliveredCommand } from './stop-delivered.command';
-import { StopCompletedEvent } from '../../domains/shipment/events/stop-completed.event';
+import { ArriveAtStopEvent } from '../../domains/shipment/events/stop-arrived.event';
 
-@CommandHandler(StopDeliveredCommand)
-export class StopDeliveredHandler implements ICommandHandler<StopDeliveredCommand> {
+@CommandHandler(ArriveAtStopCommand)
+export class ArriveAtStopHandler implements ICommandHandler<ArriveAtStopCommand> {
   constructor(
     @InjectRepository(ShipmentEntity)
     private readonly shipmentRepository: Repository<ShipmentEntity>,
   ) {}
 
-  async execute(command: StopDeliveredCommand): Promise<{ message: string }> {
+  async execute(command: ArriveAtStopCommand): Promise<{ message: string }> {
     const shipment = await this.shipmentRepository.findOne({
       where: { id: command.shipmentId },
       relations: ['stops'],
@@ -22,12 +22,12 @@ export class StopDeliveredHandler implements ICommandHandler<StopDeliveredComman
     if (!shipment) {
       throw new ShipmentNotFoundException(command.shipmentId);
     }
-    shipment.deliverAtStop(command.stopId);
+    shipment.arriveAtStop(command.stopId);
     await this.shipmentRepository.save(shipment);
 
-    const event = new StopCompletedEvent(shipment.id, command.stopId, 'Delivery');
-    console.log('Stop Completed Event:', event);
+    const event = new ArriveAtStopEvent(shipment.id, command.stopId);
+    console.log('Stop Arrived Event:', event);
     
-    return { message: 'Delivered at stop successfully' };
+    return { message: 'Arrived at stop successfully' };
   }
 }

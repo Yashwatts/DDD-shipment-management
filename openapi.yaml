@@ -60,7 +60,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /shipments/{shipmentId}/stops/{stopId}/arrive:
-    post:
+    patch:
       tags:
         - Update Stop Status
       summary: Arrive at a specific stop
@@ -96,7 +96,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /shipments/{shipmentId}/stops/{stopId}/pickup:
-    post:
+    patch:
       tags:
         - Update Stop Status
       summary: Pickup at a specific stop
@@ -132,7 +132,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /shipments/{shipmentId}/stops/{stopId}/deliver:
-    post:
+    patch:
       tags:
         - Update Stop Status
       summary: Deliver at a specific stop
